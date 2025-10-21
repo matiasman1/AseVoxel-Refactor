@@ -1,0 +1,24 @@
+-- core/viewer_core.lua
+-- Thin adapter over existing viewerCore.lua logic, now modular and small entrypoints
+
+local preview_utils = require("render.preview_utils")
+local help_dialog = require("dialog.help_dialog")
+local controls_dialog = require("dialog.controls_dialog")
+
+local M = {}
+
+local function showPreview(state)
+  preview_utils.openPreview(state, function(result)
+    -- optional callback (metrics, image)
+  end)
+end
+
+function M.openMain(state)
+  showPreview(state)
+  controls_dialog.open(state, {
+    onChange = function(vp) preview_utils.queuePreview(vp, "controls") end,
+    onHelp = function() help_dialog.open() end
+  })
+end
+
+return M
