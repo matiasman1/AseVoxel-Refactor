@@ -32,7 +32,6 @@ end
 function init(plugin)
   setupModuleSearch(plugin)
   local controller = require("core.controller")
-
   plugin:newCommand{
     id = "AseVoxel",
     title = "AseVoxel",

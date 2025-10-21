@@ -4,6 +4,7 @@
 local preview_utils = require("render.preview_utils")
 local help_dialog = require("dialog.help_dialog")
 local controls_dialog = require("dialog.controls_dialog")
+local model_viewer = require("dialog.model_viewer")
 
 local M = {}
 
@@ -14,9 +15,10 @@ local function showPreview(state)
 end
 
 function M.openMain(state)
-  showPreview(state)
+  model_viewer.open(state)
+  model_viewer.requestRender(state)
   controls_dialog.open(state, {
-    onChange = function(vp) preview_utils.queuePreview(vp, "controls") end,
+    onChange = function(vp) model_viewer.requestRender(vp) end,
     onHelp = function() help_dialog.open() end
   })
 end

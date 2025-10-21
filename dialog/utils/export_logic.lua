@@ -1,6 +1,7 @@
 -- dialog/utils/export_logic.lua
 local file_utils = require("utils.file_utils")
 local previewRenderer = require("previewRenderer")
+local debug = require("core.debug")
 
 local M = {}
 
@@ -9,6 +10,7 @@ local function defaultOptions()
 end
 
 function M.initState(viewParams)
+  debug.log("export_logic.initState")
   return {
     opts = defaultOptions(),
     path = "",
@@ -19,6 +21,7 @@ function M.initState(viewParams)
 end
 
 function M.computePreview(sprite, viewParams, canvasW, canvasH)
+  debug.log("export_logic.computePreview")
   local vox = previewRenderer.generateVoxelModel(sprite)
   if not vox or #vox == 0 then return nil, vox end
   local params = {

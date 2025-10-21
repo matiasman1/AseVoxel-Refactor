@@ -35,7 +35,7 @@ fi
 
 # Create a new zip archive with lua, json files and binary libraries
 echo "Creating $EXTENSION_NAME.zip..."
-zip -r "$EXTENSION_NAME.zip" *.lua *.json bin *.so *.dll lib
+zip -r "$EXTENSION_NAME.zip" *.lua *.json bin *.so *.dll lib core dialog render utils
 
 # Rename the .zip file to .aseprite-extension
 echo "Renaming $EXTENSION_NAME.zip to $EXTENSION_NAME.aseprite-extension..."

@@ -1,6 +1,7 @@
 -- dialog/utils/outline_logic.lua
 -- Pure helpers for outline dialog
 
+local debug = require("core.debug")
 local M = {}
 
 local function sanitizeMode(mode)
@@ -9,6 +10,7 @@ local function sanitizeMode(mode)
 end
 
 function M.createSettings(data)
+  debug.log("outline_logic.createSettings")
   return {
     mode = sanitizeMode(data.outlineMode),
     place = data.place or "outside",

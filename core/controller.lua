@@ -3,19 +3,12 @@
 
 local viewer_core = require("core.viewer_core")
 local sprite_watcher = require("core.sprite_watcher")
+local state_mod = require("core.state")
 
 local M = {}
 
 local function newState()
-  return {
-    rotationMatrix = nil,
-    scaleLevel = 1.0,
-    shadingMode = "Stack",
-    fxStack = nil,
-    lighting = nil,
-    orthogonalView = false,
-    perspectiveScaleRef = "middle",
-  }
+  return state_mod.default()
 end
 
 local function ensureWatchers(state)

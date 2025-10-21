@@ -2,12 +2,14 @@
 -- Pure logic for controls dialog (no dlg: calls)
 
 local math_utils = require("utils.math_utils")
+local debug = require("core.debug")
 
 local M = {}
 
 local function clampAngle(a) return (a % 360 + 360) % 360 end
 
 function M.initParams(vp)
+  debug.log("controls_logic.initParams")
   vp.xRotation = clampAngle(vp.xRotation or 315)
   vp.yRotation = clampAngle(vp.yRotation or 324)
   vp.zRotation = clampAngle(vp.zRotation or 29)
@@ -18,6 +20,7 @@ function M.initParams(vp)
 end
 
 function M.applyEuler(vp, x, y, z)
+  debug.log(string.format("controls_logic.applyEuler x=%s y=%s z=%s", tostring(x), tostring(y), tostring(z)))
   vp.xRotation = clampAngle(x or vp.xRotation)
   vp.yRotation = clampAngle(y or vp.yRotation)
   vp.zRotation = clampAngle(z or vp.zRotation)

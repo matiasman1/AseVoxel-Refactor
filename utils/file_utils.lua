@@ -3,7 +3,7 @@ local M = {}
 local previewRenderer
 
 local function getRenderer()
-  if not previewRenderer then previewRenderer = require("previewRenderer") end
+  if not previewRenderer then previewRenderer = require("render.previewRenderer") end
   return previewRenderer
 end
 

@@ -4,7 +4,8 @@
 local math_utils = require("utils.math_utils")
 local rotation = require("core.rotation")
 local preview_utils = require("render.preview_utils")
-local previewRenderer = require("previewRenderer")
+local previewRenderer = require("render.previewRenderer")
+local debug = require("core.debug")
 
 local M = {}
 
@@ -18,6 +19,7 @@ function M.degreesPerStep(total, steps)
 end
 
 function M.buildFrameMatrix(baseMatrix, axis, angle)
+  debug.log(string.format("animation_logic.buildFrameMatrix axis=%s angle=%s", tostring(axis), tostring(angle)))
   if axis=="X" then
     return rotation.applyAbsoluteRotation(baseMatrix, angle, 0, 0)
   elseif axis=="Y" then
