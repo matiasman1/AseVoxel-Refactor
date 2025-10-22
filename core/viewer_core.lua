@@ -5,6 +5,7 @@ local preview_utils = require("render.preview_utils")
 local help_dialog = require("dialog.help_dialog")
 local controls_dialog = require("dialog.controls_dialog")
 local model_viewer = require("dialog.model_viewer")
+local preview_window = require("dialog.preview_window")
 
 local M = {}
 
@@ -15,10 +16,14 @@ local function showPreview(state)
 end
 
 function M.openMain(state)
+  -- Open separate preview window like AseVoxel
+  preview_window.open(state)
+  -- Keep main viewer (actions hub) to mimic AseVoxel's main dialog
   model_viewer.open(state)
-  model_viewer.requestRender(state)
   controls_dialog.open(state, {
-    onChange = function(vp) model_viewer.requestRender(vp) end,
+    onChange = function(vp)
+      preview_utils.queuePreview(vp, "controls")
+    end,
     onHelp = function() help_dialog.open() end
   })
 end

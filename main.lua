@@ -18,6 +18,7 @@ local function setupModuleSearch(plugin)
     "core",
     "render",
     app.fs.joinPath("render","local"),
+    app.fs.joinPath("render","modes"),
     "dialog",
     app.fs.joinPath("dialog","utils"),
     "utils",

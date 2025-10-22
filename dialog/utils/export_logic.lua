@@ -6,7 +6,16 @@ local debug = require("core.debug")
 local M = {}
 
 local function defaultOptions()
-  return { format="obj", includeTexture=true, scaleModel=1.0, optimizeMesh=true }
+  return {
+    format="obj",
+    includeTexture=true,
+    scaleModel=1.0,
+    optimizeMesh=true,
+    exportAtScale=nil,         -- when true, use current pixel scale from viewParams
+    enableOutlines=false,
+    outlineColor=Color(0,0,0),
+    outlineWidth=1
+  }
 end
 
 function M.initState(viewParams)

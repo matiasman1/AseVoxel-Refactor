@@ -1,31 +1,57 @@
 -- core/state.lua
--- Small helpers to initialize and mutate shared view state
+-- Enhanced state management with support for all rendering modes
 
-local math_utils = require("utils.math_utils")
+local mathUtils = require("utils.math_utils")
 
 local M = {}
 
 function M.default()
   return {
-    xRotation = 315, yRotation = 324, zRotation = 29,
-    rotationMatrix = math_utils.createRotationMatrix(315,324,29),
-    scaleLevel = 1.0, shadingMode = "Stack", fxStack = nil,
-    lighting = nil, orthogonalView = false, perspectiveScaleRef = "middle",
-    canvasSize = 200, fovDegrees = 45
+    -- Rotation and position
+    xRotation = 315, 
+    yRotation = 324, 
+    zRotation = 29,
+    rotationMatrix = mathUtils.createRotationMatrix(315, 324, 29),
+    
+    -- Scale and view
+    scaleLevel = 1.0,
+    canvasSize = 300,
+    
+    -- Rendering modes
+    shadingMode = "Stack",
+    useMesh = false,
+    useNative = true,
+    
+    -- Projection
+    orthogonalView = false,
+    perspectiveScaleRef = "middle",
+    fovDegrees = 45,
+    
+    -- FX and effects
+    fxStack = nil,
+    enableOutline = false,
+    outlineSettings = nil,
+    
+    -- Lighting
+    lighting = {
+      yaw = 0,
+      pitch = 45,
+      ambient = 30,
+      diffuse = 70,
+      lightColor = Color(255, 255, 255),
+      showCone = false
+    },
+    
+    -- Layer scroll
+    layerScrollMode = false,
+    layerScrollMin = 0,
+    layerScrollMax = 999
   }
 end
 
 function M.updateRotation(vp, x, y, z)
-  if x then vp.xRotation = x end
-  if y then vp.yRotation = y end
-  if z then vp.zRotation = z end
-  vp.rotationMatrix = math_utils.createRotationMatrix(vp.xRotation, vp.yRotation, vp.zRotation)
-  return vp
+  if x ~= nil then vp.xRotation = x % 360 end
+  if y ~= nil then vp.yRotation = y % 360 end
+  if z ~= nil then vp.zRotation = z % 360 end
+  vp.rotationMatrix = mathUtils.createRotationMatrix(vp.xRotation, vp.yRotation, vp.zRotation)
 end
-
-function M.setScale(vp, s)
-  vp.scaleLevel = math.max(0.05, math.min(8.0, s or 1.0))
-  return vp
-end
-
-return M

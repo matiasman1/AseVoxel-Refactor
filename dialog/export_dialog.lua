@@ -47,9 +47,25 @@ function M.open(viewParams, options)
     onchange=function() st.opts.scaleModel = dlg.data.scaleModel end
   }
   dlg:check{
+    id="usePixelScale", label="Use Pixel Scale", selected=(st.opts.exportAtScale ~= nil),
+    onchange=function()
+      st.opts.exportAtScale = dlg.data.usePixelScale and (viewParams.scaleLevel or 1.0) or nil
+      local eff = st.opts.exportAtScale or st.opts.scaleModel
+      dlg:modify{ id="scaleInfo", text=string.format("Effective scale: %.0f%% (%.2f units per voxel)", (eff or 1.0)*100, (eff or 1.0)) }
+    end
+  }
+  dlg:label{
+    id="scaleInfo",
+    text=string.format("Effective scale: %.0f%% (%.2f units per voxel)", (viewParams.scaleLevel or 1.0)*100, (viewParams.scaleLevel or 1.0))
+  }
+  dlg:check{
     id="optimizeMesh", label="Optimize Mesh", selected=st.opts.optimizeMesh,
     onchange=function() st.opts.optimizeMesh = dlg.data.optimizeMesh end
   }
+  dlg:separator{ text="Outline Options" }
+  dlg:check{ id="enableOutlines", label="Enable Outlines", selected=false, onchange=function() st.opts.enableOutlines = dlg.data.enableOutlines end }
+  dlg:color{ id="outlineColor", label="Outline Color:", color=Color(0,0,0), onchange=function() st.opts.outlineColor = dlg.data.outlineColor end }
+  dlg:slider{ id="outlineWidth", label="Outline Width:", min=1, max=3, value=1, onchange=function() st.opts.outlineWidth = dlg.data.outlineWidth end }
   dlg:separator{ text="Export Location" }
   local defaultPath = app.fs.filePath(sprite.filename or "") or ""
   dlg:entry{ id="filename", label="Filename:", text=st.filename, focus=true }
