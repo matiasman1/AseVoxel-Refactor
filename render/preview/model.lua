@@ -1,20 +1,27 @@
--- Preview model helpers: generate voxel model and calculate middle point
--- (Phase 2: implement voxel extraction from an Aseprite sprite)
+-- render/preview/model.lua
+-- Robust voxel extraction from Aseprite sprite (port of original logic)
 local model = {}
 
--- Generate a voxel model from a sprite.
--- Returns an array of voxels { x, y, z, color = { r,g,b,a } }
--- We map layers to Z (bottom-most layer -> z=0, next -> z=1, ...).
--- Supports image cels with position offsets.
+-- Helper to read pixel color robustly (handles Color tables and indexed values)
+local function readPixelColor(img, x, y)
+  local ok, pix = pcall(function() return img:getPixel(x, y) end)
+  if not ok or not pix then return nil end
+  if type(pix) == "table" then
+    return { r = pix.r or pix.red or 255, g = pix.g or pix.green or 255, b = pix.b or pix.blue or 255, a = pix.a or pix.alpha or 255 }
+  elseif type(pix) == "number" then
+    -- Indexed/greyscale: treat non-zero as opaque white
+    if pix == 0 then return nil end
+    return { r = 255, g = 255, b = 255, a = 255 }
+  else
+    return nil
+  end
+end
+
+-- Generate voxel model: iterate layers (image layers), map layer order to z
 function model.generateVoxelModel(sprite)
   if not sprite then return {} end
-
-  local voxels = {}
-  -- Determine the target frame (use activeFrame or 1)
   local frame = app.activeFrame or 1
-
-  -- Layers are stacked: lower index is bottom.
-  -- We'll assign z = layerIndex-1 for each layer that contains image cels.
+  local voxels = {}
   for layerIndex, layer in ipairs(sprite.layers) do
     if layer.isImage then
       local z = layerIndex - 1
@@ -24,46 +31,22 @@ function model.generateVoxelModel(sprite)
         local bounds = cel.bounds or { x = 0, y = 0 }
         local offX = bounds.x or 0
         local offY = bounds.y or 0
-        local w, h = img.width, img.height
-        for yy = 0, h-1 do
-          for xx = 0, w-1 do
-            -- image:getPixel returns pixel value or color; robustly handle Color or number
-            local ok, pix = pcall(function() return img:getPixel(xx, yy) end)
-            if ok and pix then
-              -- Accept either Color-like (table) or packed integer (indexed colors)
-              local r,g,b,a
-              if type(pix) == "table" and (pix.r or pix.red) then
-                r = pix.r or pix.red or 0
-                g = pix.g or pix.green or 0
-                b = pix.b or pix.blue or 0
-                a = pix.a or pix.alpha or 255
-              elseif type(pix) == "number" then
-                -- Indexed/paletted sprites: try to convert using sprite.palette if available
-                -- Fallback: treat non-zero value as opaque white
-                if pix == 0 then a = 0 else a = 255 end
-                r, g, b = 255, 255, 255
-              else
-                -- Unknown pixel type: skip
-                a = 0
-              end
-
-              if a and a > 0 then
-                local vx = offX + xx
-                local vy = offY + yy
-                local color = { r = r, g = g, b = b, a = a }
-                voxels[#voxels + 1] = { x = vx, y = vy, z = z, color = color }
-              end
+        for yy = 0, img.height - 1 do
+          for xx = 0, img.width - 1 do
+            local color = readPixelColor(img, xx, yy)
+            if color and color.a and color.a > 0 then
+              local vx = offX + xx
+              local vy = offY + yy
+              voxels[#voxels + 1] = { x = vx, y = vy, z = z, color = color }
             end
           end
         end
       end
     end
   end
-
   return voxels
 end
 
--- Calculate middle point and sizes for a voxel model
 function model.calculateMiddlePoint(voxelModel)
   local minX, minY, minZ = math.huge, math.huge, math.huge
   local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
@@ -85,9 +68,7 @@ function model.calculateMiddlePoint(voxelModel)
     x = (minX + maxX) / 2,
     y = (minY + maxY) / 2,
     z = (minZ + maxZ) / 2,
-    sizeX = sizeX,
-    sizeY = sizeY,
-    sizeZ = sizeZ,
+    sizeX = sizeX, sizeY = sizeY, sizeZ = sizeZ,
     _bounds = { minX = minX, minY = minY, minZ = minZ, maxX = maxX, maxY = maxY, maxZ = maxZ }
   }
   return mp

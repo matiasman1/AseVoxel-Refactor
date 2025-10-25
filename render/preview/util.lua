@@ -1,4 +1,4 @@
--- Utility helpers for preview submodules
+-- render/preview/util.lua
 local util = {}
 
 function util.toColor(c)

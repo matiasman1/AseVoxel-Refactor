@@ -1,9 +1,10 @@
--- Output resolution adjustments and anti-aliasing
+-- render/preview/downsample.lua
+-- Downsample / post-processing (kept compact)
 local downsample = {}
 
-function downsample.downsample(image, params, metrics)
-  -- No-op in Phase 1
-  return image
+function downsample.downsample(img, params, metrics)
+  -- No-op if no downsample required; placeholder for full original logic (AA, gamma)
+  return img
 end
 
 return downsample
