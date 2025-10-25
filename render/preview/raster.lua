@@ -1,8 +1,7 @@
--- render/preview/raster.lua
--- Polygon projection + triangle scanline rasterization (meshRenderer-inspired)
-
+-- raster.lua: project face quads using camera and fill via meshRenderer
 local mathUtils = require("utils.mathUtils")
 local util = require("render.preview.util")
+local meshRenderer = require("render.meshRenderer")
 
 local raster = {}
 
@@ -37,43 +36,14 @@ local function projectPoint(px,py,pz, mp, cam, canvasSize, scale)
   end
 end
 
-local function edgeFunc(a,b,c)
-  return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)
-end
-
-local function drawTriangle(img, p0, p1, p2, color)
-  local w,h = img.width, img.height
-  local minX = math.max(0, math.floor(math.min(p0.x,p1.x,p2.x)))
-  local maxX = math.min(w-1, math.ceil(math.max(p0.x,p1.x,p2.x)))
-  local minY = math.max(0, math.floor(math.min(p0.y,p1.y,p2.y)))
-  local maxY = math.min(h-1, math.ceil(math.max(p0.y,p1.y,p2.y)))
-  local area = edgeFunc(p0,p1,p2)
-  if area == 0 then return end
-  for y = minY, maxY do
-    for x = minX, maxX do
-      local p = { x = x + 0.5, y = y + 0.5 }
-      local w0 = edgeFunc(p1,p2,p)
-      local w1 = edgeFunc(p2,p0,p)
-      local w2 = edgeFunc(p0,p1,p)
-      if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0) then
-        img:drawPixel(x, y, color)
-      end
-    end
-  end
-end
-
-local function drawQuad(img, pts, color)
-  drawTriangle(img, pts[1], pts[2], pts[3], color)
-  drawTriangle(img, pts[1], pts[3], pts[4], color)
-end
-
 function raster.draw(faces, params, cam)
   local canvasSize = params.canvasSize or 200
   local scale = params.scale or params.scaleLevel or 1.0
   local mp = params.middlePoint or { x = 0, y = 0, z = 0, sizeX = 0, sizeY = 0, sizeZ = 0 }
 
   local img = Image(canvasSize, canvasSize, ColorMode.RGBA)
-  local poly = {}
+
+  local polys = {}
   for _,f in ipairs(faces or {}) do
     local verts = FACE_VERTS[f.face]
     local pts2d = {}
@@ -87,12 +57,13 @@ function raster.draw(faces, params, cam)
       avgDepth = avgDepth + d
     end
     avgDepth = avgDepth / #verts
-    poly[#poly+1] = { pts = pts2d, color = util.toColor(f.color), depth = avgDepth }
+    polys[#polys+1] = { pts = pts2d, color = util.toColor(f.color), depth = avgDepth }
   end
 
-  table.sort(poly, function(a,b) return a.depth < b.depth end)
-  for _,p in ipairs(poly) do drawQuad(img, p.pts, p.color) end
-
+  table.sort(polys, function(a,b) return a.depth < b.depth end)
+  for _,p in ipairs(polys) do
+    meshRenderer.fillQuad(img, p.pts, p.color)
+  end
   return img
 end
 

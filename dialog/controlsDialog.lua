@@ -1,4 +1,4 @@
--- Controls dialog split from original dialogueManager
+-- Controls dialog: expanded to mirror AseVoxel controls
 local dialogueManager = require("dialog.dialogueManager")
 local viewerCore = require("core.viewerCore")
 
@@ -27,33 +27,12 @@ function controlsDialog.open(viewParams, previewDlg)
   dlg:label{ id="scaleLabel", text="Scale: " .. string.format("%.0f%%", (vp.scaleLevel or 1)*100) }
   dlg:newrow()
 
-  dlg:slider{
-    id="xRot", label="X", min=0, max=360, value=vp.xRotation or 315,
+  dlg:combobox{
+    id="shadingMode", label="Shading",
+    options={"Stack","Basic","Dynamic"},
+    option=vp.shadingMode or "Stack",
     onchange=function()
-      vp.xRotation = dlg.data.xRot
-      applyAndUpdate(previewDlg, vp)
-    end
-  }
-  dlg:slider{
-    id="yRot", label="Y", min=0, max=360, value=vp.yRotation or 324,
-    onchange=function()
-      vp.yRotation = dlg.data.yRot
-      applyAndUpdate(previewDlg, vp)
-    end
-  }
-  dlg:slider{
-    id="zRot", label="Z", min=0, max=360, value=vp.zRotation or 29,
-    onchange=function()
-      vp.zRotation = dlg.data.zRot
-      applyAndUpdate(previewDlg, vp)
-    end
-  }
-
-  dlg:slider{
-    id="depth", label="Depth", min=0, max=100, value=vp.depthPerspective or 50,
-    onchange=function()
-      vp.depthPerspective = dlg.data.depth
-      vp.fovDegrees = 5 + (75-5)*(vp.depthPerspective/100)
+      vp.shadingMode = dlg.data.shadingMode
       applyAndUpdate(previewDlg, vp)
     end
   }
@@ -68,6 +47,15 @@ function controlsDialog.open(viewParams, previewDlg)
   }
 
   dlg:slider{
+    id="depth", label="Depth", min=0, max=100, value=vp.depthPerspective or 50,
+    onchange=function()
+      vp.depthPerspective = dlg.data.depth
+      vp.fovDegrees = 5 + (75-5)*(vp.depthPerspective/100)
+      applyAndUpdate(previewDlg, vp)
+    end
+  }
+
+  dlg:slider{
     id="scale", label="Scale", min=10, max=400, value=(vp.scaleLevel or 1)*100,
     onchange=function()
       local v = dlg.data.scale
@@ -77,19 +65,25 @@ function controlsDialog.open(viewParams, previewDlg)
   }
 
   dlg:separator()
-
-  dlg:button{
-    id="helpBtn",
-    text="Help",
-    onclick=function() dialogueManager.openHelpDialog() end
+  dlg:slider{
+    id="xRot", label="X", min=0, max=360, value=vp.xRotation or 315,
+    onchange=function() vp.xRotation = dlg.data.xRot; applyAndUpdate(previewDlg, vp) end
+  }
+  dlg:slider{
+    id="yRot", label="Y", min=0, max=360, value=vp.yRotation or 324,
+    onchange=function() vp.yRotation = dlg.data.yRot; applyAndUpdate(previewDlg, vp) end
+  }
+  dlg:slider{
+    id="zRot", label="Z", min=0, max=360, value=vp.zRotation or 29,
+    onchange=function() vp.zRotation = dlg.data.zRot; applyAndUpdate(previewDlg, vp) end
   }
 
+  dlg:separator()
+  dlg:button{ id="helpBtn", text="Help", onclick=function() dialogueManager.openHelpDialog() end }
+  dlg:button{ id="fxBtn", text="FX Stack", onclick=function() require("dialog.fxStackDialog").open(vp) end }
   dlg:button{
     id="closeButton", text="Close",
-    onclick=function()
-      dialogueManager.controlsDialog = nil
-      dlg:close()
-    end
+    onclick=function() dialogueManager.controlsDialog = nil; dlg:close() end
   }
 
   dlg:show{ wait=false }

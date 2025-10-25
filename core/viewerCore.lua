@@ -1,6 +1,6 @@
--- Core non-UI orchestration for preview rendering
+-- viewerCore.lua (refactor): central orchestration of preview updates and metrics
 local previewRenderer = require("render.previewRenderer")
-local previewUtils = require("utils.previewUtils")
+local dialogueManager = require("dialog.dialogueManager")
 
 local viewerCore = {}
 local _lastMetrics = nil
@@ -9,18 +9,17 @@ local function nowMs()
   return os.clock() * 1000
 end
 
--- Render and return an image; caller may pass controlsDialog to sync UI text (scale label, etc.)
+-- Render and return an image; also returns voxelModel and middlePoint
 function viewerCore.renderPreview(viewParams, context)
   local sprite = app.activeSprite
   if not sprite then return nil end
 
-  -- Generate model once per render call (kept parity with original)
   local voxelModel = previewRenderer.generateVoxelModel(sprite)
   if not voxelModel or #voxelModel == 0 then return nil end
 
   local middlePoint = previewRenderer.calculateMiddlePoint(voxelModel)
 
-  local params = {
+  local renderParams = {
     xRotation = viewParams.xRotation,
     yRotation = viewParams.yRotation,
     zRotation = viewParams.zRotation,
@@ -41,13 +40,23 @@ function viewerCore.renderPreview(viewParams, context)
   }
 
   local t0 = nowMs()
-  local image = previewRenderer.renderVoxelModel(voxelModel, params)
+  local image = previewRenderer.renderVoxelModel(voxelModel, renderParams)
   local t1 = nowMs()
 
-  params.metrics = params.metrics or {}
-  params.metrics.renderTime = params.metrics.renderTime or (t1 - t0)
-  params.metrics.t_total_ms = params.metrics.t_total_ms or params.metrics.renderTime
-  _lastMetrics = params.metrics
+  renderParams.metrics = renderParams.metrics or {}
+  renderParams.metrics.renderTime = renderParams.metrics.renderTime or (t1 - t0)
+  renderParams.metrics.t_total_ms = renderParams.metrics.t_total_ms or renderParams.metrics.renderTime
+  _lastMetrics = renderParams.metrics
+
+  -- Optional UI sync back to controls dialog (e.g., scale label)
+  if dialogueManager and dialogueManager.controlsDialog then
+    pcall(function()
+      dialogueManager.controlsDialog:modify{
+        id="scaleLabel",
+        text="Scale: " .. string.format("%.0f%%", (viewParams.scaleLevel or 1)*100)
+      }
+    end)
+  end
 
   return image, voxelModel, middlePoint
 end

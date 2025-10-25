@@ -1,4 +1,4 @@
--- Consolidated export dialog using original structure and previewRenderer for mini preview
+-- Export dialog: mini preview + basic options; expand with original options
 local previewRenderer = require("render.previewRenderer")
 
 local exportDialog = {}
@@ -8,15 +8,6 @@ function exportDialog.open()
   local sprite = app.activeSprite
   local voxelModel = nil
   local previewImage = nil
-
-  local viewParams = { scaleLevel = 1.0 }
-  local exportOptions = {
-    format = "obj",
-    includeTexture = true,
-    scaleModel = 1.0,
-    optimizeMesh = true
-  }
-
   local canvasWidth, canvasHeight = 160, 160
 
   local function generatePreview()
@@ -31,19 +22,10 @@ function exportDialog.open()
     end
     voxelModel = regenerated
     local middlePoint = previewRenderer.calculateMiddlePoint(voxelModel)
-
-    local params = {
-      x = 315, y = 324, z = 29,
-      depth = 50, orthogonal = false,
-      pixelSize = 1, canvasSize = canvasWidth, zoomFactor = 1
-    }
+    local params = { x = 315, y = 324, z = 29, depth = 50, orthogonal = false, pixelSize = 1, canvasSize = canvasWidth }
     previewImage = previewRenderer.renderVoxelModel(voxelModel, params)
-
     dlg:modify{ id = "modelInfo_count", text = "Voxel count: " .. #voxelModel }
-    dlg:modify{
-      id = "modelInfo_dims",
-      text = string.format("Model size: %dx%dx%d voxels", middlePoint.sizeX, middlePoint.sizeY, middlePoint.sizeZ)
-    }
+    dlg:modify{ id = "modelInfo_dims", text = string.format("Model size: %dx%dx%d voxels", middlePoint.sizeX, middlePoint.sizeY, middlePoint.sizeZ) }
     dlg:repaint()
   end
 
