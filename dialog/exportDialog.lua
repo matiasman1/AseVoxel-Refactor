@@ -1,4 +1,4 @@
--- Export dialog: mini preview + basic options; expand with original options
+-- Export dialog: mini preview + model info + refresh
 local previewRenderer = require("render.previewRenderer")
 
 local exportDialog = {}
@@ -21,11 +21,17 @@ function exportDialog.open()
       return
     end
     voxelModel = regenerated
-    local middlePoint = previewRenderer.calculateMiddlePoint(voxelModel)
-    local params = { x = 315, y = 324, z = 29, depth = 50, orthogonal = false, pixelSize = 1, canvasSize = canvasWidth }
+    local mp = previewRenderer.calculateMiddlePoint(voxelModel)
+
+    local params = {
+      x = 315, y = 324, z = 29,
+      depth = 50, orthogonal = false,
+      pixelSize = 1, canvasSize = canvasWidth, zoomFactor = 1
+    }
     previewImage = previewRenderer.renderVoxelModel(voxelModel, params)
+
     dlg:modify{ id = "modelInfo_count", text = "Voxel count: " .. #voxelModel }
-    dlg:modify{ id = "modelInfo_dims", text = string.format("Model size: %dx%dx%d voxels", middlePoint.sizeX, middlePoint.sizeY, middlePoint.sizeZ) }
+    dlg:modify{ id = "modelInfo_dims", text = string.format("Model size: %dx%dx%d voxels", mp.sizeX, mp.sizeY, mp.sizeZ) }
     dlg:repaint()
   end
 
@@ -44,15 +50,15 @@ function exportDialog.open()
   }
 
   dlg:newrow()
-  dlg:label{ id="modelInfo_count", text="Voxel count: -" }
+  dlg:label{ id = "modelInfo_count", text = "Voxel count: -" }
   dlg:newrow()
-  dlg:label{ id="modelInfo_dims", text="" }
+  dlg:label{ id = "modelInfo_dims", text = "" }
   dlg:newrow()
 
-  dlg:button{ id="refresh", text="Refresh", onclick=generatePreview }
-  dlg:button{ id="close", text="Close", onclick=function() dlg:close() end }
+  dlg:button{ id = "refresh", text = "Refresh", onclick = generatePreview }
+  dlg:button{ id = "close", text = "Close", onclick=function() dlg:close() end }
 
-  dlg:show{ wait=false }
+  dlg:show{ wait = false }
   return dlg
 end
 

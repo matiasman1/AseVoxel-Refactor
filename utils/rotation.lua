@@ -1,4 +1,4 @@
--- Rotation helpers (Phase 2: port full trackball/Euler helpers)
+-- rotation.lua: degree/radian helpers (extend as needed)
 local rotation = {}
 
 function rotation.deg2rad(d) return (d or 0) * math.pi / 180 end
