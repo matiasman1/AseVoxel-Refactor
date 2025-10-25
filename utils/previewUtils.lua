@@ -1,5 +1,5 @@
 -- previewUtils.lua: update preview and create animations
-local previewRenderer = require("render.previewRenderer")
+local previewRenderer = require("previewRenderer")
 
 local previewUtils = {}
 

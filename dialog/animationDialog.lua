@@ -1,5 +1,5 @@
 -- Animation dialog: mirrors original AseVoxel options and live info
-local previewUtils = require("utils.previewUtils")
+local previewUtils = require("previewUtils")
 
 local animationDialog = {}
 

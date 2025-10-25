@@ -1,8 +1,8 @@
 -- Facade for preview rendering (public API preserved)
-local RemoteRenderer = require("render.remoteRenderer")
-local modelMod = require("render.preview.model")
-local pipelineMod = require("render.preview.pipeline")
-local downsampleMod = require("render.preview.downsample")
+local RemoteRenderer = require("remoteRenderer")
+local modelMod = require("model")
+local pipelineMod = require("pipeline")
+local downsampleMod = require("downsample")
 
 local previewRenderer = {}
 

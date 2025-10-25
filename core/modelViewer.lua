@@ -1,6 +1,6 @@
 -- Thin orchestration for opening the viewer dialogs
-local dialogueManager = require("dialog.dialogueManager")
-local viewerCore = require("core.viewerCore")
+local dialogueManager = require("dialogueManager")
+local viewerCore = require("viewerCore")
 
 local modelViewer = {}
 

@@ -1,5 +1,5 @@
 -- Export dialog: mini preview + model info + refresh
-local previewRenderer = require("render.previewRenderer")
+local previewRenderer = require("previewRenderer")
 
 local exportDialog = {}
 

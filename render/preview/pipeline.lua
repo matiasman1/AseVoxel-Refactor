@@ -1,8 +1,8 @@
 -- render/preview/pipeline.lua
-local cameraMod = require("render.preview.camera")
-local shadingMod = require("render.preview.shading")
-local rasterMod = require("render.preview.raster")
-local downsample = require("render.preview.downsample")
+local cameraMod = require("camera")
+local shadingMod = require("shading")
+local rasterMod = require("raster")
+local downsample = require("downsample")
 
 local pipeline = {}
 

@@ -1,6 +1,6 @@
 {
     "name": "asevoxel-refactor",
-    "displayName": "AseVoxel - Mesh",
+    "displayName": "AseVoxel - Refactor",
     "description": "3D voxel model viewer for Aseprite with native renderer support",
     "version": "1.0.0",
     "author": {

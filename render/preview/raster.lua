@@ -1,7 +1,7 @@
 -- raster.lua: project quads, paint with painter's algorithm, optional outline
-local mathUtils = require("utils.mathUtils")
-local util = require("render.preview.util")
-local meshRenderer = require("render.meshRenderer")
+local mathUtils = require("mathUtils")
+local util = require("util")
+local meshRenderer = require("meshRenderer")
 
 local raster = {}
 

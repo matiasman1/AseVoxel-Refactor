@@ -1,5 +1,5 @@
 -- Preview window split out from original modelViewer/dialogueManager responsibilities
-local viewerCore = require("core.viewerCore")
+local viewerCore = require("viewerCore")
 
 local previewDialog = {}
 

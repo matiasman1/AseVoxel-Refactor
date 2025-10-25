@@ -1,6 +1,6 @@
 -- render/preview/camera.lua
 -- Parity-tuned camera with calibrated perspective distance and FOV mapping
-local mathUtils = require("utils.mathUtils")
+local mathUtils = require("mathUtils")
 
 local camera = {}
 

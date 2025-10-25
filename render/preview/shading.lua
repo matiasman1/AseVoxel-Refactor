@@ -1,7 +1,7 @@
 -- render/preview/shading.lua
 -- Build visible faces and shade them (Basic/Stack/Dynamic)
-local fxStack = require("fx.fxStack")
-local mathUtils = require("utils.mathUtils")
+local fxStack = require("fxStack")
+local mathUtils = require("mathUtils")
 
 local shading = {}
 

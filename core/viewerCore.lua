@@ -1,6 +1,6 @@
 -- viewerCore.lua: orchestrates rendering, throttling, and UI sync
-local previewRenderer = require("render.previewRenderer")
-local dialogueManager = require("dialog.dialogueManager")
+local previewRenderer = require("previewRenderer")
+local dialogueManager = require("dialogueManager")
 
 local viewerCore = {}
 local _lastMetrics = nil

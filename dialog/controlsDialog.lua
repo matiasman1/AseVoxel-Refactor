@@ -1,6 +1,6 @@
 -- Controls dialog with parity controls: shading, ortho, depth(FOV), scale, outline
-local dialogueManager = require("dialog.dialogueManager")
-local viewerCore = require("core.viewerCore")
+local dialogueManager = require("dialogueManager")
+local viewerCore = require("viewerCore")
 
 local controlsDialog = {}
 
@@ -80,7 +80,7 @@ function controlsDialog.open(viewParams, previewDlg)
   dlg:label{ id="metricsLabel", text="Render: -" }
 
   dlg:button{ id="helpBtn", text="Help", onclick=function() dialogueManager.openHelpDialog() end }
-  dlg:button{ id="fxBtn", text="FX Stack", onclick=function() require("dialog.fxStackDialog").open(vp) end }
+  dlg:button{ id="fxBtn", text="FX Stack", onclick=function() require("fxStackDialog").open(vp) end }
   dlg:button{
     id="closeButton", text="Close",
     onclick=function() dialogueManager.controlsDialog = nil; dlg:close() end

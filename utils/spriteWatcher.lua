@@ -1,6 +1,6 @@
 -- spriteWatcher: auto-refresh preview when sprite changes
-local viewerCore = require("core.viewerCore")
-local dialogueManager = require("dialog.dialogueManager")
+local viewerCore = require("viewerCore")
+local dialogueManager = require("dialogueManager")
 
 local spriteWatcher = {}
 spriteWatcher._enabled = false

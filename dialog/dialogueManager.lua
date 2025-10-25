@@ -1,5 +1,5 @@
 -- Dialog manager: holds state, routes to per-dialog modules, throttles updates
-local mathUtils = require("utils.mathUtils")
+local mathUtils = require("mathUtils")
 
 local dialogueManager = {
   controlsDialog = nil,
@@ -31,29 +31,29 @@ function dialogueManager.safeUpdate(viewParams, updateCallback)
 end
 
 function dialogueManager.openPreviewDialog(viewParams)
-  local previewDialog = require("dialog.previewDialog")
+  local previewDialog = require("previewDialog")
   dialogueManager.previewDialog = previewDialog.open(viewParams)
   return dialogueManager.previewDialog
 end
 
 function dialogueManager.openControlsDialog(viewParams, previewDialog)
-  local controlsDialog = require("dialog.controlsDialog")
+  local controlsDialog = require("controlsDialog")
   dialogueManager.controlsDialog = controlsDialog.open(viewParams, previewDialog)
   return dialogueManager.controlsDialog
 end
 
 function dialogueManager.openHelpDialog()
-  local help = require("dialog.helpDialog")
+  local help = require("helpDialog")
   return help.open()
 end
 
 function dialogueManager.openAnimationDialog(viewParams, modelDimensions, voxelModel, canvasSize, scaleLevel)
-  local anim = require("dialog.animationDialog")
+  local anim = require("animationDialog")
   return anim.open(viewParams, modelDimensions, voxelModel, canvasSize, scaleLevel)
 end
 
 function dialogueManager.openExportDialog()
-  local exp = require("dialog.exportDialog")
+  local exp = require("exportDialog")
   dialogueManager.exportDialog = exp.open()
   return dialogueManager.exportDialog
 end
