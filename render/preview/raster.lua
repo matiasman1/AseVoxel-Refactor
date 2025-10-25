@@ -1,78 +1,114 @@
--- Rasterization: project voxels and draw them to an Image
+-- raster.lua: project face quads to 2D and rasterize them to an Image.
 local mathUtils = require("utils.mathUtils")
+local util = require("render.preview.util")
 
 local raster = {}
 
--- Draw voxels as small squares onto an Image.
--- model: array of voxels {x,y,z,color,brightness}
--- params: canvasSize, pixelSize, middlePoint, scaleLevel, etc.
--- cam: contains rotationMatrix, focalLength, orthogonal
-function raster.draw(model, params, cam)
+-- cube face local vertex definitions (each face is quad of 4 verts)
+local FACE_VERTS = {
+  top   = { {0,0,0},{1,0,0},{1,0,1},{0,0,1} },
+  bottom= { {0,1,0},{0,1,1},{1,1,1},{1,1,0} },
+  front = { {0,0,0},{0,1,0},{1,1,0},{1,0,0} },
+  back  = { {0,0,1},{1,0,1},{1,1,1},{0,1,1} },
+  left  = { {0,0,0},{0,0,1},{0,1,1},{0,1,0} },
+  right = { {1,0,0},{1,1,0},{1,1,1},{1,0,1} }
+}
+
+-- Project a 3D point (world) to canvas coords
+local function projectPoint(px,py,pz, mp, cam, canvasSize, scale)
+  local rx = px - mp.x
+  local ry = py - mp.y
+  local rz = pz - mp.z
+  local pr = mathUtils.applyRotation(cam.rotationMatrix, { x = rx, y = ry, z = rz })
+
+  if cam.orthogonal then
+    local cx = math.floor((pr.x * scale) + (canvasSize / 2) + 0.5)
+    local cy = math.floor((pr.y * -scale) + (canvasSize / 2) + 0.5)
+    return cx, cy, pr.z
+  else
+    local f = cam.focalLength or (canvasSize/2)
+    local zoffset = (pr.z + (mp.sizeX or 0) + 1) + 1
+    if zoffset <= 0.01 then zoffset = 0.01 end
+    local sx = (pr.x * f) / (zoffset)
+    local sy = (pr.y * f) / (zoffset)
+    local cx = math.floor(sx + (canvasSize / 2) + 0.5)
+    local cy = math.floor(-sy + (canvasSize / 2) + 0.5)
+    return cx, cy, pr.z
+  end
+end
+
+-- Triangle rasterization (scanline) - from meshRenderer style approach
+local function drawTriangle(image, p0, p1, p2, color)
+  -- bounding box clamp
+  local w,h = image.width, image.height
+  local minX = math.max(0, math.floor(math.min(p0.x,p1.x,p2.x)))
+  local maxX = math.min(w-1, math.ceil(math.max(p0.x,p1.x,p2.x)))
+  local minY = math.max(0, math.floor(math.min(p0.y,p1.y,p2.y)))
+  local maxY = math.min(h-1, math.ceil(math.max(p0.y,p1.y,p2.y)))
+
+  local function edgeFunction(a,b,c)
+    return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)
+  end
+
+  local area = edgeFunction(p0,p1,p2)
+  if area == 0 then return end
+
+  for y = minY, maxY do
+    for x = minX, maxX do
+      local p = { x = x + 0.5, y = y + 0.5 }
+      local w0 = edgeFunction(p1,p2,p)
+      local w1 = edgeFunction(p2,p0,p)
+      local w2 = edgeFunction(p0,p1,p)
+      -- barycentric coordinates test
+      if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0) then
+        image:drawPixel(x, y, color)
+      end
+    end
+  end
+end
+
+-- Draw a quad as two triangles
+local function drawQuad(image, pts2d, color)
+  drawTriangle(image, pts2d[1], pts2d[2], pts2d[3], color)
+  drawTriangle(image, pts2d[1], pts2d[3], pts2d[4], color)
+end
+
+-- Main draw entry
+-- faces: list of { x,y,z, face, color }
+function raster.draw(faces, params, cam)
   local canvasSize = params.canvasSize or 200
   local pixelSize = params.pixelSize or 1
   local scale = params.scale or params.scaleLevel or 1.0
-  local mp = params.middlePoint or { x = 0, y = 0, z = 0 }
+  local mp = params.middlePoint or { x=0,y=0,z=0, sizeX=0, sizeY=0, sizeZ=0 }
 
-  -- Prepare blank image
   local img = Image(canvasSize, canvasSize, ColorMode.RGBA)
-  -- Transparent background by default
-  local bg = Color(0,0,0,0)
 
-  -- Project function: world 3D -> 2D canvas coordinates
-  local function project(p)
-    -- translate to center
-    local rx = p.x - mp.x
-    local ry = p.y - mp.y
-    local rz = p.z - mp.z
-
-    -- apply rotation
-    local M = cam.rotationMatrix
-    local pr = { x = rx, y = ry, z = rz }
-    if M then
-      pr = mathUtils.applyRotation(M, pr)
+  -- convert faces to projected polygons with depth key
+  local polyList = {}
+  for _, f in ipairs(faces or {}) do
+    local verts_local = FACE_VERTS[f.face]
+    local pts2d = {}
+    local avgDepth = 0
+    for i,vv in ipairs(verts_local) do
+      -- local face verts are in cube-space [0..1], add voxel position offset
+      local wx = f.x + vv[1]
+      local wy = f.y + vv[2]
+      local wz = f.z + vv[3]
+      local cx, cy, depth = projectPoint(wx,wy,wz, mp, cam, canvasSize, scale)
+      pts2d[i] = { x = cx, y = cy, z = depth }
+      avgDepth = avgDepth + depth
     end
-
-    -- Simple perspective: camera looking down +Z
-    if cam.orthogonal then
-      -- map x,y to canvas
-      local cx = math.floor((pr.x * scale) + (canvasSize / 2) + 0.5)
-      local cy = math.floor((pr.y * -scale) + (canvasSize / 2) + 0.5)
-      return cx, cy, pr.z
-    else
-      local f = cam.focalLength or (canvasSize/2)
-      local zoffset = (pr.z + (mp and math.max(mp.sizeX or 0, mp.sizeY or 0) or 1)) + 1
-      if zoffset <= 0.01 then zoffset = 0.01 end
-      local sx = (pr.x * f) / (zoffset)
-      local sy = (pr.y * f) / (zoffset)
-      local cx = math.floor(sx + (canvasSize / 2) + 0.5)
-      local cy = math.floor(-sy + (canvasSize / 2) + 0.5)
-      return cx, cy, pr.z
-    end
+    avgDepth = avgDepth / #verts_local
+    polyList[#polyList+1] = { pts = pts2d, color = util.toColor(f.color), depth = avgDepth }
   end
 
-  -- Depth sort: far -> near so later draws overlap nearer voxels last
-  table.sort(model, function(a,b) return (a.z or 0) < (b.z or 0) end)
+  -- painter's algorithm: sort by depth (far first)
+  table.sort(polyList, function(a,b) return a.depth < b.depth end)
 
-  -- Draw voxels
-  for i, v in ipairs(model) do
-    local cx, cy, depth = project(v)
-    if cx and cy and cx >= 0 and cy >= 0 and cx < canvasSize and cy < canvasSize then
-      -- Color: prefer v.color; brightness may be used later
-      local c = v.color or { r = 255, g = 255, b = 255, a = 255 }
-      local col = Color(c.r or c.red or 255, c.g or c.green or 255, c.b or c.blue or 255, c.a or c.alpha or 255)
-
-      -- Draw a square of pixelSize (clamp to canvas)
-      local half = math.floor(pixelSize / 2)
-      for oy = -half, half do
-        for ox = -half, half do
-          local px = cx + ox
-          local py = cy + oy
-          if px >= 0 and py >= 0 and px < canvasSize and py < canvasSize then
-            img:drawPixel(px, py, col)
-          end
-        end
-      end
-    end
+  -- draw polygons
+  for _, poly in ipairs(polyList) do
+    -- ensure points are in correct order for triangles
+    drawQuad(img, poly.pts, poly.color)
   end
 
   return img
