@@ -13,12 +13,14 @@ set -euo pipefail
 DRY_RUN=1
 FORCE=0
 TARGET_DIR="."
+FILE_PATTERN="*.lua"   # default: only process .lua files
 
 print_usage() {
   cat <<EOF
-Usage: $0 [--apply] [--force] [target_dir]
+Usage: $0 [--apply] [--force] [--all] [target_dir]
   --apply     Perform the moves (default is dry-run)
   --force     Overwrite existing destination files when applying
+  --all       Process all files (not only .lua). By default only *.lua are handled.
   target_dir  Directory containing files with underscores (default: current dir)
 EOF
 }
@@ -28,6 +30,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --apply) DRY_RUN=0; shift ;;
     --force) FORCE=1; shift ;;
+    --all) FILE_PATTERN="*"; shift ;;          # new: allow processing all files
     --help) print_usage; exit 0 ;;
     --*) printf "Unknown option: %s\n" "$1" >&2; print_usage; exit 2 ;;
     *) TARGET_DIR="$1"; shift ;;
@@ -40,8 +43,8 @@ if [ ! -d "$TARGET_DIR" ]; then
   exit 2
 fi
 
-# Process only regular .lua files in the target directory root
-find "$TARGET_DIR" -maxdepth 1 -type f -name "*.lua" -print0 | while IFS= read -r -d '' src; do
+# Process only regular files matching FILE_PATTERN in the target directory root
+find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS= read -r -d '' src; do
   base="$(basename "$src")"
   # Skip files without underscore
   if [[ "$base" != *"_"* ]]; then
@@ -58,7 +61,7 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "*.lua" -print0 | while IFS= read -
     # Convert underscores to slashes for final destination path
     new_rel_nover="${new_base_nover//_//}"
     new_rel_nover="${new_rel_nover#/}"
-    dest_nover="$TARGET_DIR/$new_rel_nover"s
+    dest_nover="$TARGET_DIR/$new_rel_nover"    # fixed stray 's' typo here
     dest_nover_dir="$(dirname "$dest_nover")"
 
     if [ "$DRY_RUN" -eq 1 ]; then
