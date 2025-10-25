@@ -1,4 +1,4 @@
--- raster.lua: project face quads using camera and fill via meshRenderer
+-- raster.lua: project quads, paint with painter's algorithm, optional outline
 local mathUtils = require("utils.mathUtils")
 local util = require("render.preview.util")
 local meshRenderer = require("render.meshRenderer")
@@ -19,7 +19,6 @@ local function projectPoint(px,py,pz, mp, cam, canvasSize, scale)
   local ry = py - mp.y
   local rz = pz - (mp.z or 0)
   local pr = mathUtils.applyRotation(cam.rotationMatrix, { x = rx, y = ry, z = rz })
-
   if cam.orthogonal then
     local cx = math.floor((pr.x * scale) + (canvasSize/2) + 0.5)
     local cy = math.floor((pr.y * -scale) + (canvasSize/2) + 0.5)
@@ -36,14 +35,20 @@ local function projectPoint(px,py,pz, mp, cam, canvasSize, scale)
   end
 end
 
+local function drawOutline(img, pts, color)
+  util.drawLine(img, pts[1].x, pts[1].y, pts[2].x, pts[2].y, color)
+  util.drawLine(img, pts[2].x, pts[2].y, pts[3].x, pts[3].y, color)
+  util.drawLine(img, pts[3].x, pts[3].y, pts[4].x, pts[4].y, color)
+  util.drawLine(img, pts[4].x, pts[4].y, pts[1].x, pts[1].y, color)
+end
+
 function raster.draw(faces, params, cam)
   local canvasSize = params.canvasSize or 200
   local scale = params.scale or params.scaleLevel or 1.0
-  local mp = params.middlePoint or { x = 0, y = 0, z = 0, sizeX = 0, sizeY = 0, sizeZ = 0 }
-
+  local mp = params.middlePoint or { x=0,y=0,z=0, sizeX=0,sizeY=0,sizeZ=0 }
   local img = Image(canvasSize, canvasSize, ColorMode.RGBA)
-
   local polys = {}
+
   for _,f in ipairs(faces or {}) do
     local verts = FACE_VERTS[f.face]
     local pts2d = {}
@@ -63,7 +68,12 @@ function raster.draw(faces, params, cam)
   table.sort(polys, function(a,b) return a.depth < b.depth end)
   for _,p in ipairs(polys) do
     meshRenderer.fillQuad(img, p.pts, p.color)
+    if params.enableOutline then
+      local oc = params.outlineColor or { r=0,g=0,b=0,a=255 }
+      drawOutline(img, p.pts, util.toColor(oc))
+    end
   end
+
   return img
 end
 

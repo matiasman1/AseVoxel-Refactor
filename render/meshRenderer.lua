@@ -1,4 +1,4 @@
--- meshRenderer.lua: scanline triangle rasterization helpers
+-- meshRenderer.lua: scanline triangle fill (used by raster)
 local meshRenderer = {}
 
 local function edgeIntersections(scanY, p0, p1)
@@ -12,18 +12,15 @@ end
 function meshRenderer.fillTriangle(image, p0, p1, p2, color)
   local y0 = math.max(0, math.floor(math.min(p0.y, p1.y, p2.y)))
   local y2 = math.min(image.height-1, math.ceil(math.max(p0.y, p1.y, p2.y)))
-
   for y = y0, y2 do
     local scanY = y + 0.5
     local xs = {}
-
     local x01 = edgeIntersections(scanY, p0, p1)
     local x12 = edgeIntersections(scanY, p1, p2)
     local x02 = edgeIntersections(scanY, p0, p2)
     if x01 then xs[#xs+1] = x01 end
     if x12 then xs[#xs+1] = x12 end
     if x02 then xs[#xs+1] = x02 end
-
     if #xs >= 2 then
       table.sort(xs)
       for k = 1, #xs, 2 do

@@ -1,17 +1,13 @@
--- mathUtils.lua: matrix and vector helpers used across modules
+-- mathUtils.lua: matrices and vector helpers
 local mathUtils = {}
 
 local function deg2rad(d) return (d or 0) * math.pi / 180 end
+function mathUtils.clamp(v, lo, hi) if v<lo then return lo elseif v>hi then return hi else return v end end
 
-function mathUtils.identity()
-  return { 1,0,0, 0,1,0, 0,0,1 }
-end
+function mathUtils.identity() return { 1,0,0, 0,1,0, 0,0,1 } end
 
--- Rotation matrix from Euler degrees (Rz * Ry * Rx)
 function mathUtils.createRotationMatrix(xDeg, yDeg, zDeg)
-  local x = deg2rad(xDeg or 0)
-  local y = deg2rad(yDeg or 0)
-  local z = deg2rad(zDeg or 0)
+  local x = deg2rad(xDeg or 0); local y = deg2rad(yDeg or 0); local z = deg2rad(zDeg or 0)
   local cx,sx = math.cos(x), math.sin(x)
   local cy,sy = math.cos(y), math.sin(y)
   local cz,sz = math.cos(z), math.sin(z)
@@ -44,5 +40,6 @@ function mathUtils.vecAdd(a,b) return { x=a.x+b.x, y=a.y+b.y, z=a.z+b.z } end
 function mathUtils.vecSub(a,b) return { x=a.x-b.x, y=a.y-b.y, z=a.z-b.z } end
 function mathUtils.dot(a,b) return a.x*b.x + a.y*b.y + a.z*b.z end
 function mathUtils.len(a) return math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z) end
+function mathUtils.normalize(a) local l = mathUtils.len(a); if l>1e-8 then return {x=a.x/l,y=a.y/l,z=a.z/l} else return {x=0,y=0,z=0} end end
 
 return mathUtils
