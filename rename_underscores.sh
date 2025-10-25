@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Dry-run script to move files named like "core_modelViewer.lua" -> "core/modelViewer.lua"
 # Also: if a file ends with _VersionN (or _versionN) before .lua, copy it to the same name without that suffix
-#       so utils_mathUtils_Version2.lua -> overwrite utils/mathUtils.lua
+#       in the same directory (no underscore->slash conversion), then delete the version file
+#       so utils_mathUtils_Version2.lua -> overwrite utils_mathUtils.lua
 # Usage:
 #   ./rename_underscores.sh                 # show what would be moved (dry-run)
 #   ./rename_underscores.sh --apply         # perform the moves
@@ -58,11 +59,9 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
   if [[ "$name" =~ ^(.*)_([Vv]ersion[0-9]+)$ ]]; then
     name_nover="${BASH_REMATCH[1]}"
     new_base_nover="${name_nover}.${ext}"
-    # Convert underscores to slashes for final destination path
-    new_rel_nover="${new_base_nover//_//}"
-    new_rel_nover="${new_rel_nover#/}"
-    dest_nover="$TARGET_DIR/$new_rel_nover"    # fixed stray 's' typo here
-    dest_nover_dir="$(dirname "$dest_nover")"
+    # Keep in the same directory as the source file (no underscore->slash conversion)
+    dest_nover_dir="$(dirname "$src")"
+    dest_nover="$dest_nover_dir/$new_base_nover"
 
     if [ "$DRY_RUN" -eq 1 ]; then
       if [ -d "$dest_nover_dir" ]; then
@@ -77,15 +76,21 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
           printf "  Note: destination exists: %s (would overwrite because it's a version copy)\n" "$dest_nover"
         fi
       fi
+      printf "Would delete version file after copy: %s\n" "$src"
+      printf "Would NOT move versioned file into tree: %s\n" "$base"
+      continue
     else
       # Apply: ensure destination dir exists, then copy (force overwrite)
       if [ ! -d "$dest_nover_dir" ]; then
         mkdir -p "$dest_nover_dir"
         printf "Created dir: %s\n" "$dest_nover_dir"
       fi
-      # Always overwrite base file with versioned content for this operation
       cp -f -- "$src" "$dest_nover"
       printf "Copied version file over base: %s -> %s\n" "$src" "$dest_nover"
+      rm -f -- "$src"
+      printf "Deleted version file: %s\n" "$src"
+      # Do not move versioned files into underscore-based tree
+      continue
     fi
   fi
 
