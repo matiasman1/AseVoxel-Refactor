@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# Dry-run script to move files named like "core_modelViewer.lua" -> "core/modelViewer.lua"
+# Also: if a file ends with _VersionN (or _versionN) before .lua, copy it to the same name without that suffix
+#       so utils_mathUtils_Version2.lua -> overwrite utils/mathUtils.lua
+# Usage:
+#   ./rename_underscores.sh                 # show what would be moved (dry-run)
+#   ./rename_underscores.sh --apply         # perform the moves
+#   ./rename_underscores.sh --apply --force # perform moves, overwrite existing targets
+#   ./rename_underscores.sh --apply /path/to/dir
+
+set -euo pipefail
+
+DRY_RUN=1
+FORCE=0
+TARGET_DIR="."
+
+print_usage() {
+  cat <<EOF
+Usage: $0 [--apply] [--force] [target_dir]
+  --apply     Perform the moves (default is dry-run)
+  --force     Overwrite existing destination files when applying
+  target_dir  Directory containing files with underscores (default: current dir)
+EOF
+}
+
+# Simple argument parsing
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --apply) DRY_RUN=0; shift ;;
+    --force) FORCE=1; shift ;;
+    --help) print_usage; exit 0 ;;
+    --*) printf "Unknown option: %s\n" "$1" >&2; print_usage; exit 2 ;;
+    *) TARGET_DIR="$1"; shift ;;
+  esac
+done
+
+# Ensure target dir exists
+if [ ! -d "$TARGET_DIR" ]; then
+  printf "Error: target directory does not exist: %s\n" "$TARGET_DIR" >&2
+  exit 2
+fi
+
+# Process only regular .lua files in the target directory root
+find "$TARGET_DIR" -maxdepth 1 -type f -name "*.lua" -print0 | while IFS= read -r -d '' src; do
+  base="$(basename "$src")"
+  # Skip files without underscore
+  if [[ "$base" != *"_"* ]]; then
+    continue
+  fi
+
+  name="${base%.*}"
+  ext="${base##*.}"
+
+  # If file ends with _VersionN or _versionN, prepare a copy destination without that suffix
+  if [[ "$name" =~ ^(.*)_([Vv]ersion[0-9]+)$ ]]; then
+    name_nover="${BASH_REMATCH[1]}"
+    new_base_nover="${name_nover}.${ext}"
+    # Convert underscores to slashes for final destination path
+    new_rel_nover="${new_base_nover//_//}"
+    new_rel_nover="${new_rel_nover#/}"
+    dest_nover="$TARGET_DIR/$new_rel_nover"s
+    dest_nover_dir="$(dirname "$dest_nover")"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+      if [ -d "$dest_nover_dir" ]; then
+        printf "Would copy (version->base): %s -> %s (dir exists)\n" "$src" "$dest_nover"
+      else
+        printf "Would copy (version->base): %s -> %s (would create dir: %s)\n" "$src" "$dest_nover" "$dest_nover_dir"
+      fi
+      if [ -e "$dest_nover" ]; then
+        if [ "$FORCE" -eq 1 ]; then
+          printf "  Note: destination exists: %s (would overwrite due to --force)\n" "$dest_nover"
+        else
+          printf "  Note: destination exists: %s (would overwrite because it's a version copy)\n" "$dest_nover"
+        fi
+      fi
+    else
+      # Apply: ensure destination dir exists, then copy (force overwrite)
+      if [ ! -d "$dest_nover_dir" ]; then
+        mkdir -p "$dest_nover_dir"
+        printf "Created dir: %s\n" "$dest_nover_dir"
+      fi
+      # Always overwrite base file with versioned content for this operation
+      cp -f -- "$src" "$dest_nover"
+      printf "Copied version file over base: %s -> %s\n" "$src" "$dest_nover"
+    fi
+  fi
+
+  # Continue with normal behavior: move file into underscore->slash layout
+  # Build destination relative path by replacing underscores with slashes
+  new_rel="${base//_//}"
+  # Avoid creating an absolute path when filename starts with underscore
+  new_rel="${new_rel#/}"
+
+  dest="$TARGET_DIR/$new_rel"
+  dest_dir="$(dirname "$dest")"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if [ -d "$dest_dir" ]; then
+      printf "Would move: %s -> %s (dir exists)\n" "$src" "$dest"
+    else
+      printf "Would move: %s -> %s (would create dir: %s)\n" "$src" "$dest" "$dest_dir"
+    fi
+
+    if [ -e "$dest" ]; then
+      if [ "$FORCE" -eq 1 ]; then
+        printf "  Note: destination exists: %s (would overwrite due to --force)\n" "$dest"
+      else
+        printf "  Note: destination exists: %s (would skip by default)\n" "$dest"
+      fi
+    fi
+  else
+    # Apply mode: ensure destination directory exists
+    if [ ! -d "$dest_dir" ]; then
+      mkdir -p "$dest_dir"
+      printf "Created dir: %s\n" "$dest_dir"
+    fi
+
+    # Handle existing destination
+    if [ -e "$dest" ]; then
+      if [ "$FORCE" -eq 1 ]; then
+        rm -f -- "$dest"
+        printf "Removed existing destination (force): %s\n" "$dest"
+      else
+        printf "Skipping %s -> %s: destination exists (use --force to overwrite)\n" "$src" "$dest" >&2
+        continue
+      fi
+    fi
+
+    mv -v -- "$src" "$dest"
+  fi
+done
