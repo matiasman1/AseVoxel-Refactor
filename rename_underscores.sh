@@ -47,6 +47,7 @@ fi
 # Process only regular files matching FILE_PATTERN in the target directory root
 find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS= read -r -d '' src; do
   base="$(basename "$src")"
+  OVERWRITE_THIS_MOVE=0
   # Skip files without underscore
   if [[ "$base" != *"_"* ]]; then
     continue
@@ -77,7 +78,11 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
         fi
       fi
       printf "Would delete version file after copy: %s\n" "$src"
-      printf "Would NOT move versioned file into tree: %s\n" "$base"
+      # Prepare to move the renamed base file and overwrite destination
+      src="$dest_nover"
+      base="$(basename "$src")"
+      OVERWRITE_THIS_MOVE=1
+      printf "Would move (renamed versioned file): %s -> %s\n" "$src" "$dest"
       continue
     else
       # Apply: ensure destination dir exists, then copy (force overwrite)
@@ -89,8 +94,10 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
       printf "Copied version file over base: %s -> %s\n" "$src" "$dest_nover"
       rm -f -- "$src"
       printf "Deleted version file: %s\n" "$src"
-      # Do not move versioned files into underscore-based tree
-      continue
+      # Prepare to move the renamed base file and overwrite destination
+      src="$dest_nover"
+      base="$(basename "$src")"
+      OVERWRITE_THIS_MOVE=1
     fi
   fi
 
@@ -103,6 +110,14 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
   dest="$TARGET_DIR/$new_rel"
   dest_dir="$(dirname "$dest")"
 
+  # If destination equals source, no move is needed
+  if [ "$src" = "$dest" ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf "No move needed (already at final path): %s\n" "$src"
+    fi
+    continue
+  fi
+
   if [ "$DRY_RUN" -eq 1 ]; then
     if [ -d "$dest_dir" ]; then
       printf "Would move: %s -> %s (dir exists)\n" "$src" "$dest"
@@ -111,7 +126,9 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
     fi
 
     if [ -e "$dest" ]; then
-      if [ "$FORCE" -eq 1 ]; then
+      if [ "$OVERWRITE_THIS_MOVE" -eq 1 ]; then
+        printf "  Note: destination exists: %s (would overwrite due to versioned rename)\n" "$dest"
+      elif [ "$FORCE" -eq 1 ]; then
         printf "  Note: destination exists: %s (would overwrite due to --force)\n" "$dest"
       else
         printf "  Note: destination exists: %s (would skip by default)\n" "$dest"
@@ -126,7 +143,10 @@ find "$TARGET_DIR" -maxdepth 1 -type f -name "$FILE_PATTERN" -print0 | while IFS
 
     # Handle existing destination
     if [ -e "$dest" ]; then
-      if [ "$FORCE" -eq 1 ]; then
+      if [ "$OVERWRITE_THIS_MOVE" -eq 1 ]; then
+        rm -f -- "$dest"
+        printf "Removed existing destination (versioned overwrite): %s\n" "$dest"
+      elif [ "$FORCE" -eq 1 ]; then
         rm -f -- "$dest"
         printf "Removed existing destination (force): %s\n" "$dest"
       else
