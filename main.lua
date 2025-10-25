@@ -53,15 +53,7 @@ function init(plugin)
   -- Add cpath entries before requiring any modules
   pcall(function() addFoldersToCPath(plugin) end)
 
-  local modelviewerOK,modelViewer = pcall(require,"modelViewer")
-
-  print(modelViewer)
-  print(modelviewerOK)
-
-  if not modelviewerOK or not modelViewer then
-    app.alert("Failed to load AseVoxel core module. Please ensure the native library is available.\n\n(AseVoxel will be disabled.)")
-    return
-  end
+  local modelViewer = require("modelViewer");
 
   plugin:newCommand{
     id = "AseVoxel",
